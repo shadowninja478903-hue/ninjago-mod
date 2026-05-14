@@ -1,0 +1,52 @@
+name: Build Ninjago Mod
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Install Gradle 8.8
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.8-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt/gradle
+          echo "/opt/gradle/gradle-8.8/bin" >> $GITHUB_PATH
+
+      - name: Find project root and build
+        run: |
+          BUILD_FILE=$(find . -name "build.gradle" -not -path "*/.gradle/*" -not -path "*/build/*" | head -1)
+          BUILD_DIR=$(dirname "$BUILD_FILE")
+          echo "Building in: $BUILD_DIR"
+          cd "$BUILD_DIR"
+          gradle wrapper --gradle-version=8.8
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+        env:
+          GRADLE_OPTS: "-Xmx3g"
+
+      - name: Verify JAR contents
+        run: |
+          JAR=$(find . -name "ninjago-*.jar" -path "*/build/libs/*" | head -1)
+          echo "=== JAR: $JAR ==="
+          unzip -l "$JAR" | grep -E "mods.toml|pack.mcmeta|\.class" | head -20
+          echo "=== neoforge.mods.toml contents ==="
+          unzip -p "$JAR" META-INF/neoforge.mods.toml
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ninjago-mod-jar
+          path: "**/build/libs/ninjago-*.jar"
+          if-no-files-found: error
