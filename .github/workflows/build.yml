@@ -1,52 +1,83 @@
-name: Build Ninjago Mod
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.0.145'
+}
 
-on:
-  push:
-    branches: [ main, master ]
-  workflow_dispatch:
+version = mod_version
+group = mod_group_id
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+base {
+    archivesName = mod_id
+}
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-      - name: Install Gradle 8.8
-        run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.8-bin.zip -O /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /opt/gradle
-          echo "/opt/gradle/gradle-8.8/bin" >> $GITHUB_PATH
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+        modSource project.sourceSets.main
+    }
+    client {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    }
+    server {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        programArgument '--nogui'
+    }
+}
 
-      - name: Find project root and build
-        run: |
-          BUILD_FILE=$(find . -name "build.gradle" -not -path "*/.gradle/*" -not -path "*/build/*" | head -1)
-          BUILD_DIR=$(dirname "$BUILD_FILE")
-          echo "Building in: $BUILD_DIR"
-          cd "$BUILD_DIR"
-          gradle wrapper --gradle-version=8.8
-          chmod +x gradlew
-          ./gradlew build --no-daemon
-        env:
-          GRADLE_OPTS: "-Xmx3g"
+sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-      - name: Verify JAR contents
-        run: |
-          JAR=$(find . -name "ninjago-*.jar" -path "*/build/libs/*" | head -1)
-          echo "=== JAR: $JAR ==="
-          unzip -l "$JAR" | grep -E "mods.toml|pack.mcmeta|\.class" | head -20
-          echo "=== neoforge.mods.toml contents ==="
-          unzip -p "$JAR" META-INF/neoforge.mods.toml
+dependencies {
+    implementation "net.neoforged:neoforge:${neo_version}"
+}
 
-      - name: Upload JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: ninjago-mod-jar
-          path: "**/build/libs/ninjago-*.jar"
-          if-no-files-found: error
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+        mod_id         : mod_id,
+        mod_name       : mod_name,
+        mod_version    : mod_version,
+        mod_license    : mod_license,
+        mod_description: mod_description
+    ]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.named('jar').configure {
+    doLast {
+        def jarFile = archiveFile.get().asFile
+        def toml = file('src/main/resources/META-INF/neoforge.mods.toml')
+        def mcmeta = file('src/main/resources/pack.mcmeta')
+        def assets = file('src/main/resources/assets')
+        ant.zip(destfile: jarFile, update: true) {
+            zipfileset(file: toml,   fullpath: 'META-INF/neoforge.mods.toml')
+            zipfileset(file: mcmeta, fullpath: 'pack.mcmeta')
+            if (assets.exists()) {
+                zipfileset(dir: assets, prefix: 'assets')
+            }
+        }
+        println "Injected META-INF/neoforge.mods.toml into ${jarFile.name}"
+    }
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) { artifact jar }
+    }
+    repositories {
+        maven { url "file://${project.projectDir}/mcmodsrepo" }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
