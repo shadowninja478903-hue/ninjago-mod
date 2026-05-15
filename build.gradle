@@ -36,9 +36,18 @@ dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
 }
 
-// No processResources expansion needed — neoforge.mods.toml is hardcoded
 tasks.named('processResources', ProcessResources).configure {
-    // Just copy resources as-is
+    from('src/main/resources') {
+        include 'META-INF/neoforge.mods.toml'
+        include 'pack.mcmeta'
+        include 'assets/**'
+        include 'data/**'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+jar {
+    from(sourceSets.main.resources)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
@@ -54,4 +63,5 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.release = 21
+}
 }
