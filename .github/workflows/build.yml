@@ -1,83 +1,43 @@
-plugins {
-    id 'java'
-    id 'eclipse'
-    id 'idea'
-    id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.0.145'
-}
+name: Build Ninjago Mod
 
-version = mod_version
-group = mod_group_id
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
 
-base {
-    archivesName = mod_id
-}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
 
-runs {
-    configureEach {
-        systemProperty 'forge.logging.markers', 'REGISTRIES'
-        systemProperty 'forge.logging.console.level', 'debug'
-        modSource project.sourceSets.main
-    }
-    client {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-    }
-    server {
-        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
-        programArgument '--nogui'
-    }
-}
+      - name: Install Gradle 8.8
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.8-bin.zip -O /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d /opt/gradle
+          echo "/opt/gradle/gradle-8.8/bin" >> $GITHUB_PATH
 
-sourceSets.main.resources { srcDir 'src/generated/resources' }
+      - name: Build
+        run: |
+          BUILD_FILE=$(find . -name "build.gradle" -not -path "*/.gradle/*" -not -path "*/build/*" | head -1)
+          BUILD_DIR=$(dirname "$BUILD_FILE")
+          cd "$BUILD_DIR"
+          gradle wrapper --gradle-version=8.8
+          chmod +x gradlew
+          ./gradlew build --no-daemon
+        env:
+          GRADLE_OPTS: "-Xmx3g"
 
-dependencies {
-    implementation "net.neoforged:neoforge:${neo_version}"
-}
-
-tasks.named('processResources', ProcessResources).configure {
-    var replaceProperties = [
-        mod_id         : mod_id,
-        mod_name       : mod_name,
-        mod_version    : mod_version,
-        mod_license    : mod_license,
-        mod_description: mod_description
-    ]
-    inputs.properties replaceProperties
-    filesMatching(['META-INF/neoforge.mods.toml']) {
-        expand replaceProperties
-    }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-tasks.named('jar').configure {
-    doLast {
-        def jarFile = archiveFile.get().asFile
-        def toml = file('src/main/resources/META-INF/neoforge.mods.toml')
-        def mcmeta = file('src/main/resources/pack.mcmeta')
-        def assets = file('src/main/resources/assets')
-        ant.zip(destfile: jarFile, update: true) {
-            zipfileset(file: toml,   fullpath: 'META-INF/neoforge.mods.toml')
-            zipfileset(file: mcmeta, fullpath: 'pack.mcmeta')
-            if (assets.exists()) {
-                zipfileset(dir: assets, prefix: 'assets')
-            }
-        }
-        println "Injected META-INF/neoforge.mods.toml into ${jarFile.name}"
-    }
-}
-
-publishing {
-    publications {
-        register('mavenJava', MavenPublication) { artifact jar }
-    }
-    repositories {
-        maven { url "file://${project.projectDir}/mcmodsrepo" }
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-    options.release = 21
-}
+      - name: Inject neoforge.mods.toml into JAR
+        run: |
+          JAR=$(find . -name "ninjago-*.jar" -path "*/build/libs/*" | head -1)
+          TOML=$(find . -name "neoforge.mods.toml" -path "*/resources/*" | head -1)
+          MCMETA=$(find . -name "pack.mcmeta" -path "*/resources/*" | head -1)
+          ASSETS=$(find . -type d -name "assets" -path "*/resources/*" |
