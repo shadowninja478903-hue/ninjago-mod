@@ -35,9 +35,55 @@ jobs:
         env:
           GRADLE_OPTS: "-Xmx3g"
 
-      - name: Inject neoforge.mods.toml into JAR
+      - name: Inject toml into JAR
         run: |
           JAR=$(find . -name "ninjago-*.jar" -path "*/build/libs/*" | head -1)
-          TOML=$(find . -name "neoforge.mods.toml" -path "*/resources/*" | head -1)
-          MCMETA=$(find . -name "pack.mcmeta" -path "*/resources/*" | head -1)
-          ASSETS=$(find . -type d -name "assets" -path "*/resources/*" |
+          TOML=$(find . -name "neoforge.mods.toml" | head -1)
+          PROPS=$(find . -name "gradle.properties" | grep -v ".gradle/" | head -1)
+          echo "JAR=$JAR TOML=$TOML PROPS=$PROPS"
+
+          MOD_ID=$(grep "^mod_id=" "$PROPS" | cut -d= -f2)
+          MOD_NAME=$(grep "^mod_name=" "$PROPS" | cut -d= -f2)
+          MOD_VER=$(grep "^mod_version=" "$PROPS" | cut -d= -f2)
+          MOD_LIC=$(grep "^mod_license=" "$PROPS" | cut -d= -f2)
+
+          mkdir -p /tmp/inject/META-INF
+          cp "$TOML" /tmp/inject/META-INF/neoforge.mods.toml
+
+          sed -i "s|\${mod_id}|$MOD_ID|g" /tmp/inject/META-INF/neoforge.mods.toml
+          sed -i "s|\${mod_name}|$MOD_NAME|g" /tmp/inject/META-INF/neoforge.mods.toml
+          sed -i "s|\${mod_version}|$MOD_VER|g" /tmp/inject/META-INF/neoforge.mods.toml
+          sed -i "s|\${mod_license}|$MOD_LIC|g" /tmp/inject/META-INF/neoforge.mods.toml
+          sed -i "s|\${mod_description}|Ninjago Elemental Weapons Mod|g" /tmp/inject/META-INF/neoforge.mods.toml
+
+          echo "=== Processed toml ==="
+          cat /tmp/inject/META-INF/neoforge.mods.toml
+
+          cd /tmp/inject
+          zip -ur "$OLDPWD/$JAR" META-INF/
+          echo "✅ Injected!"
+
+      - name: Inject assets into JAR
+        run: |
+          JAR=$(find . -name "ninjago-*.jar" -path "*/build/libs/*" | head -1)
+          RES=$(find . -type d -name "resources" -path "*/main/*" | head -1)
+          echo "Resources: $RES"
+          mkdir -p /tmp/assets_inject
+          cp "$RES/pack.mcmeta" /tmp/assets_inject/ 2>/dev/null || true
+          cp -r "$RES/assets" /tmp/assets_inject/ 2>/dev/null || true
+          cd /tmp/assets_inject
+          zip -ur "$OLDPWD/$JAR" . 2>/dev/null || true
+          echo "✅ Assets injected!"
+
+      - name: Verify
+        run: |
+          JAR=$(find . -name "ninjago-*.jar" -path "*/build/libs/*" | head -1)
+          echo "=== neoforge.mods.toml in JAR ==="
+          unzip -p "$JAR" META-INF/neoforge.mods.toml
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ninjago-mod-jar
+          path: "**/build/libs/ninjago-*.jar"
+          if-no-files-found: error
