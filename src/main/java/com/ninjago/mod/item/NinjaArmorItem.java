@@ -45,8 +45,6 @@ public class NinjaArmorItem extends ArmorItem {
     @Override
     public void setDamage(ItemStack stack, int damage) { /* unbreakable */ }
 
-    @Override
-
     // ── Set bonus detection ───────────────────────────────────────────────────
     public static boolean hasFullSet(Player player, String element) {
         for (EquipmentSlot slot : new EquipmentSlot[]{
