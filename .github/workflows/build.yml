@@ -38,19 +38,30 @@ jobs:
       - name: Inject toml into JAR
         run: |
           JAR=$(find . -name "ninjago-*.jar" -path "*/build/libs/*" | head -1)
+          TOML=$(find . -name "neoforge.mods.toml" | head -1)
           PROPS=$(find . -name "gradle.properties" | grep -v ".gradle/" | head -1)
+          echo "JAR=$JAR TOML=$TOML PROPS=$PROPS"
+
           MOD_ID=$(grep "^mod_id=" "$PROPS" | cut -d= -f2)
+          MOD_NAME=$(grep "^mod_name=" "$PROPS" | cut -d= -f2)
           MOD_VER=$(grep "^mod_version=" "$PROPS" | cut -d= -f2)
           MOD_LIC=$(grep "^mod_license=" "$PROPS" | cut -d= -f2)
-          MOD_NAME=$(grep "^mod_name=" "$PROPS" | cut -d= -f2)
-          echo "JAR=$JAR MOD_ID=$MOD_ID MOD_VER=$MOD_VER"
+
           mkdir -p /tmp/inject/META-INF
-          printf 'modLoader = "javafml"\nloaderVersion = "[1,)"\nlicense = "%s"\n\n[[mods]]\n    modId = "%s"\n    version = "%s"\n    displayName = "%s"\n    description = "Ninjago Elemental Weapons Mod"\n\n    [[dependencies.%s]]\n        modId = "neoforge"\n        type = "required"\n        versionRange = "[21.1,)"\n        ordering = "NONE"\n        side = "BOTH"\n\n    [[dependencies.%s]]\n        modId = "minecraft"\n        type = "required"\n        versionRange = "[1.21.1,1.22)"\n        ordering = "NONE"\n        side = "BOTH"\n' "$MOD_LIC" "$MOD_ID" "$MOD_VER" "$MOD_NAME" "$MOD_ID" "$MOD_ID" > /tmp/inject/META-INF/neoforge.mods.toml
-          echo "=== toml ==="
+          cp "$TOML" /tmp/inject/META-INF/neoforge.mods.toml
+
+          sed -i "s|\${mod_id}|$MOD_ID|g" /tmp/inject/META-INF/neoforge.mods.toml
+          sed -i "s|\${mod_name}|$MOD_NAME|g" /tmp/inject/META-INF/neoforge.mods.toml
+          sed -i "s|\${mod_version}|$MOD_VER|g" /tmp/inject/META-INF/neoforge.mods.toml
+          sed -i "s|\${mod_license}|$MOD_LIC|g" /tmp/inject/META-INF/neoforge.mods.toml
+          sed -i "s|\${mod_description}|Ninjago Elemental Weapons Mod|g" /tmp/inject/META-INF/neoforge.mods.toml
+
+          echo "=== Processed toml ==="
           cat /tmp/inject/META-INF/neoforge.mods.toml
+
           cd /tmp/inject
           zip -ur "$OLDPWD/$JAR" META-INF/
-          echo "Injected!"
+          echo "✅ Injected!"
 
       - name: Inject assets into JAR
         run: |
@@ -62,7 +73,7 @@ jobs:
           cp -r "$RES/assets" /tmp/assets_inject/ 2>/dev/null || true
           cd /tmp/assets_inject
           zip -ur "$OLDPWD/$JAR" . 2>/dev/null || true
-          echo "Assets injected!"
+          echo "✅ Assets injected!"
 
       - name: Verify
         run: |
