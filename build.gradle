@@ -1,0 +1,86 @@
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.neoforged.gradle.userdev' version '7.0.145'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+runs {
+    configureEach {
+        systemProperty 'forge.logging.markers', 'REGISTRIES'
+        systemProperty 'forge.logging.console.level', 'debug'
+        modSource project.sourceSets.main
+    }
+    client {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+    }
+    server {
+        systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
+        programArgument '--nogui'
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+dependencies {
+    implementation "net.neoforged:neoforge:${neo_version}"
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+        mod_id         : mod_id,
+        mod_name       : mod_name,
+        mod_version    : mod_version,
+        mod_license    : mod_license,
+        mod_description: mod_description
+    ]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/neoforge.mods.toml']) {
+        expand replaceProperties
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// After the jar is built, inject toml + assets directly into it using zip
+tasks.named('jar').configure {
+    doLast {
+        def jarFile = archiveFile.get().asFile
+        def toml = file('src/main/resources/META-INF/neoforge.mods.toml')
+        def mcmeta = file('src/main/resources/pack.mcmeta')
+        def assets = file('src/main/resources/assets')
+
+        // Use ant to update the jar
+        ant.zip(destfile: jarFile, update: true) {
+            zipfileset(file: toml,   fullpath: 'META-INF/neoforge.mods.toml')
+            zipfileset(file: mcmeta, fullpath: 'pack.mcmeta')
+            if (assets.exists()) {
+                zipfileset(dir: assets, prefix: 'assets')
+            }
+        }
+        println "✅ Injected META-INF/neoforge.mods.toml into ${jarFile.name}"
+    }
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) { artifact jar }
+    }
+    repositories {
+        maven { url "file://${project.projectDir}/mcmodsrepo" }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+}
