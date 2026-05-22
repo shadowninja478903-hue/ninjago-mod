@@ -22,7 +22,7 @@ public class SpinjitzuUtil {
     public static void activate(Player player, Level level, String element, int color) {
         if (level.isClientSide || !(level instanceof ServerLevel sl)) return;
 
-        int radius    = NinjagoConfig.SPINJITZU_RADIUS.get();
+        int radius   = NinjagoConfig.SPINJITZU_RADIUS.get();
         double damage = NinjagoConfig.SPINJITZU_DAMAGE.get();
 
         player.addEffect(new MobEffectInstance(ModEffects.SPINJITZU, 40, 0));
