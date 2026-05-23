@@ -1,0 +1,46 @@
+{
+  "credit": "Ninjago Mod - Lightning Nunchucks (Jay)",
+  "texture_size": [32, 32],
+  "textures": {
+    "0": "ninjago:item/nunchucks",
+    "particle": "ninjago:item/nunchucks"
+  },
+  "elements": [
+    {"__comment": "Left stick body (brown)",
+     "from": [3, 2, 7], "to": [6, 11, 9],
+     "faces": {"north":{"uv":[0,0,3,10],"texture":"#0"},"south":{"uv":[0,0,3,10],"texture":"#0"},"east":{"uv":[0,0,3,10],"texture":"#0"},"west":{"uv":[0,0,3,10],"texture":"#0"},"up":{"uv":[0,10,3,12],"texture":"#0"},"down":{"uv":[0,12,3,14],"texture":"#0"}}},
+    {"__comment": "Left stick top cap (yellow)",
+     "from": [3, 11, 7], "to": [6, 13, 9],
+     "faces": {"north":{"uv":[3,0,6,2],"texture":"#0"},"south":{"uv":[3,0,6,2],"texture":"#0"},"east":{"uv":[3,0,6,2],"texture":"#0"},"west":{"uv":[3,0,6,2],"texture":"#0"},"up":{"uv":[3,2,6,4],"texture":"#0"}}},
+    {"__comment": "Left stick bottom cap (yellow)",
+     "from": [3, 0, 7], "to": [6, 2, 9],
+     "faces": {"north":{"uv":[3,0,6,2],"texture":"#0"},"south":{"uv":[3,0,6,2],"texture":"#0"},"east":{"uv":[3,0,6,2],"texture":"#0"},"west":{"uv":[3,0,6,2],"texture":"#0"},"down":{"uv":[3,4,6,6],"texture":"#0"}}},
+    {"__comment": "Right stick body (brown)",
+     "from": [10, 2, 7], "to": [13, 11, 9],
+     "faces": {"north":{"uv":[6,0,9,10],"texture":"#0"},"south":{"uv":[6,0,9,10],"texture":"#0"},"east":{"uv":[6,0,9,10],"texture":"#0"},"west":{"uv":[6,0,9,10],"texture":"#0"},"up":{"uv":[6,10,9,12],"texture":"#0"},"down":{"uv":[6,12,9,14],"texture":"#0"}}},
+    {"__comment": "Right stick top cap (yellow)",
+     "from": [10, 11, 7], "to": [13, 13, 9],
+     "faces": {"north":{"uv":[3,0,6,2],"texture":"#0"},"south":{"uv":[3,0,6,2],"texture":"#0"},"east":{"uv":[3,0,6,2],"texture":"#0"},"west":{"uv":[3,0,6,2],"texture":"#0"},"up":{"uv":[3,2,6,4],"texture":"#0"}}},
+    {"__comment": "Right stick bottom cap (yellow)",
+     "from": [10, 0, 7], "to": [13, 2, 9],
+     "faces": {"north":{"uv":[3,0,6,2],"texture":"#0"},"south":{"uv":[3,0,6,2],"texture":"#0"},"east":{"uv":[3,0,6,2],"texture":"#0"},"west":{"uv":[3,0,6,2],"texture":"#0"},"down":{"uv":[3,4,6,6],"texture":"#0"}}},
+    {"__comment": "Chain link 1 (grey)",
+     "from": [5, 13, 7.5], "to": [8, 15, 8.5],
+     "faces": {"north":{"uv":[9,0,12,2],"texture":"#0"},"south":{"uv":[9,0,12,2],"texture":"#0"},"up":{"uv":[9,2,12,3],"texture":"#0"}}},
+    {"__comment": "Chain link 2",
+     "from": [6, 14, 7], "to": [10, 16, 9],
+     "faces": {"north":{"uv":[9,3,13,5],"texture":"#0"},"south":{"uv":[9,3,13,5],"texture":"#0"},"up":{"uv":[9,5,13,7],"texture":"#0"}}},
+    {"__comment": "Chain link 3",
+     "from": [8, 13, 7.5], "to": [11, 15, 8.5],
+     "faces": {"north":{"uv":[9,0,12,2],"texture":"#0"},"south":{"uv":[9,0,12,2],"texture":"#0"},"up":{"uv":[9,2,12,3],"texture":"#0"}}}
+  ],
+  "display": {
+    "thirdperson_righthand": {"rotation":[0,90,130],"translation":[0,2,-2],"scale":[0.85,0.85,0.85]},
+    "thirdperson_lefthand":  {"rotation":[0,-90,130],"translation":[0,2,-2],"scale":[0.85,0.85,0.85]},
+    "firstperson_righthand": {"rotation":[0,-90,20],"translation":[1,3,1],"scale":[0.75,0.75,0.75]},
+    "firstperson_lefthand":  {"rotation":[0,90,-20],"translation":[1,3,1],"scale":[0.75,0.75,0.75]},
+    "ground":  {"translation":[0,2,0],"scale":[0.5,0.5,0.5]},
+    "gui":     {"rotation":[30,225,0],"scale":[0.625,0.625,0.625]},
+    "fixed":   {"scale":[0.5,0.5,0.5]}
+  }
+}
